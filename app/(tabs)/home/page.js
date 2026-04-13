@@ -1,0 +1,408 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import "@/stylesheet/user/home.css";
+import { useUser } from "@/lib/useUser";
+import { useToast } from "@/components/ToastContext";
+
+export default function Home() {
+  const { data, isLoading } = useUser();
+  const user = data?.user;
+  const { Toast } = useToast;
+  const [greeting, setGreeting] = useState("Skylie");
+  const [isCopied, setIsCopied] = useState("content_copy");
+  const [referPanel, setReferPanel] = useState(false);
+  const [showRewardPopup, setShowRewardPopup] = useState(false);
+  const [percentage, setPercentage] = useState(0);
+  const [speed, setSpeed] = useState(0);
+  const [isConnected, setIsConnected] = useState(false);
+  const [earned, setEarned] = useState(0);
+
+  useEffect(() => {
+    const hour = new Date().getHours();
+    const greetingEl =
+      hour < 12
+        ? "Good Morning"
+        : hour < 17
+          ? "Good Afternoon"
+          : "Good Evening";
+
+    setGreeting(greetingEl);
+  }, []);
+
+  useEffect(() => {
+    if (user) {
+      setEarned(user?.earned);
+    }
+  }, [user]);
+
+  const dailyQuota =
+    user?.plan?.active === 1
+      ? 250
+      : user?.plan?.active === 2
+        ? 1024
+        : user?.plan?.active === 3
+          ? 3072
+          : 0;
+  const isToday =
+    user?.today?.date &&
+    new Date(user.today.date).toDateString() === new Date().toDateString();
+
+  const todayUsed = isToday ? user?.today?.quota || 0 : 0;
+  const remainingQuota = dailyQuota - todayUsed;
+
+  const disconnect = (percentage = 0) => {
+    const dataUsed = (percentage / 100) * remainingQuota;
+    setEarned(Math.floor(dataUsed / 10));
+    if (user?.plan?.active === 1) {
+      async function expirePlan() {
+        await fetch("/api/expirePlan", {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            dataUsed,
+          }),
+        });
+      }
+      setShowRewardPopup(true);
+      expirePlan();
+      setSpeed(0);
+      setPercentage(0);
+      setIsConnected(false);
+      return;
+    }
+    if (dataUsed > 0) {
+      async function updateWallet() {
+        fetch("/api/updateWallet", {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            dataUsed,
+          }),
+        });
+      }
+      updateWallet();
+    }
+
+    setSpeed(0);
+    setPercentage(0);
+    setIsConnected(false);
+  };
+
+  const connect = () => {
+    if (!remainingQuota) return;
+    setIsConnected(true);
+
+    let targetMB = remainingQuota;
+    let downloaded = 0;
+    let limit = user?.limit || 490;
+
+    async function loadChunk(percentage) {
+      const startTime = Date.now();
+      let updatedWallete =
+        user?.wallet + (remainingQuota / 1000) * percentage || 0;
+      let assumed = (1 - Math.pow(updatedWallete / limit, 2)) * (1024 * 1024);
+      let chunkSize = assumed >= 0 ? assumed : 0;
+      try {
+        if (chunkSize === 0) return;
+        // let response = await fetch("https://httpbin.org/bytes/" + chunkSize);
+        // let blob = await response.blob();
+        await fetch("/api/tempchunks");
+
+        // downloaded += blob.size;
+        downloaded += chunkSize;
+
+        let percent = (downloaded / (targetMB * 1024 * 1024)) * 100;
+        setPercentage(Math.min(percent, 100));
+
+        if (downloaded < targetMB * 1024 * 1024) {
+          const interval = 1000 - (Date.now() - startTime);
+          // let currentSpeed = blob.size / ((interval + (Date.now() - startTime)) / 1000) / (1024 * 1024);
+          let currentSpeed =
+            chunkSize /
+            ((interval + (Date.now() - startTime)) / 1000) /
+            (1024 * 1024);
+          setSpeed(currentSpeed);
+          setTimeout(
+            () => loadChunk(Math.min(percent, 100)),
+            Math.max(0, interval),
+          );
+        } else {
+          disconnect(Math.min(percent, 100));
+        }
+      } catch (e) {
+        disconnect(0);
+        Toast.show("Something went wrong!");
+        console.error("Error loading chunk", e);
+      }
+    }
+
+    loadChunk();
+  };
+
+  return (
+    <>
+      <main className="app-container">
+        <header style={{ margin: "24px 0" }}>
+          <h1 id="greeting" style={{ fontSize: "1.75rem", fontWeight: 500 }}>
+            {greeting}
+          </h1>
+          <p style={{ color: "var(--text-sub)" }}>Share data and earn</p>
+        </header>
+        <div className="chips-container">
+          <div className="chips-row">
+            <Link href={`/history`}>
+              <div className="chip">
+                <span className="material-symbols-rounded">history</span>History
+              </div>
+            </Link>
+
+            <div
+              className="chip"
+              id="openRefer"
+              onClick={() => setReferPanel(!referPanel)}>
+              <span className="material-symbols-rounded">group</span>Refer
+            </div>
+
+            <Link href={`/plans`}>
+              <div className="chip">
+                <span className="material-symbols-rounded">layers</span>Plans
+              </div>
+            </Link>
+
+            <Link href={`/profile`}>
+              <div className="chip">
+                <span className="material-symbols-rounded">settings</span>
+                Settings
+              </div>
+            </Link>
+          </div>
+        </div>
+
+        <section className={`card ${isConnected && "connected"}`} id="earnCard">
+          <div className="sharing-badge">Sharing</div>
+          <p
+            style={{
+              color: "var(--text-sub)",
+              fontSize: "0.85rem",
+              fontWeight: 500,
+            }}>
+            Current Earnings
+          </p>
+          <h2 style={{ fontSize: "2.5rem", fontWeight: 500, margin: "8px 0" }}>
+            ₹ {(((remainingQuota / 100) * percentage) / 10).toFixed(2) || 0}
+          </h2>
+
+          <div className="progress-wrapper">
+            <div className="progress-track">
+              <div
+                className="progress-fill"
+                style={{ width: `${percentage}%` }}
+                id="progressBar"></div>
+            </div>
+            <div className="progress-labels">
+              <span id="progressText">
+                {percentage.toFixed(2)}% (
+                {((remainingQuota / 100) * percentage).toFixed(1)} MB)
+              </span>
+              <span>
+                {Math.ceil(remainingQuota)}
+                MB
+              </span>
+            </div>
+          </div>
+        </section>
+
+        <section
+          className={`card ${isConnected && "connected"}`}
+          id="speedCard"
+          style={{ display: "flex", alignItems: "center" }}>
+          <div className="speed-box" id="speedIcon">
+            <span className="material-symbols-rounded">speed</span>
+          </div>
+          <div style={{ flex: 1 }}>
+            <p style={{ color: "var(--text-sub)", fontSize: "0.8rem" }}>
+              Live Speed
+            </p>
+            <h3 id="speedValue" style={{ fontWeight: 500 }}>
+              {speed.toFixed(2)} Mb/s
+            </h3>
+          </div>
+
+          <div className="spinner-wrapper">
+            <div className="ray r1"></div>
+            <div className="ray r2"></div>
+            <div className="ray r3"></div>
+          </div>
+        </section>
+
+        <div className="section-header">
+          <h3 style={{ fontSize: "1.05rem", fontWeight: 500 }}>
+            Recent Activity
+          </h3>
+          <Link href="/history">
+            <button
+              style={{
+                background: "none",
+                border: "none",
+                color: "var(--accent-blue)",
+                fontWeight: 700,
+                fontSize: "0.85rem",
+              }}>
+              View all
+            </button>
+          </Link>
+        </div>
+      </main>
+      <div
+        className={`panel ${referPanel && "show"}`}
+        onClick={() => setReferPanel(false)}
+        onBlur={() => setReferPanel(false)}
+        id="panel"></div>
+      <div className={`bottom-sheet ${referPanel && "show"}`} id="referSheet">
+        <div className="drag-handle"></div>
+        <div style={{ textAlign: "center", marginBottom: "24px" }}>
+          <h2 style={{ fontSize: "1.3rem", fontWeight: 700, color: "#202124" }}>
+            Refer & Earn
+          </h2>
+          <p style={{ fontSize: "0.85rem", color: "#5f6368" }}>
+            Invite friends to get rewarded instantly
+          </p>
+        </div>
+
+        <div className="stepper-container">
+          <div className="step-item">
+            <div
+              className="step-icon"
+              style={{ background: "#e8f0fe", color: "#1a73e8" }}>
+              <span className="material-symbols-rounded">send</span>
+            </div>
+            <div className="step-content">
+              <h4>Invite Friends</h4>
+              <p>Share your unique referral link with your friends.</p>
+            </div>
+          </div>
+
+          <div className="step-item">
+            <div
+              className="step-icon"
+              style={{ background: "#f1f3f4", color: "#ff8000" }}>
+              <span className="material-symbols-rounded">verified_user</span>
+            </div>
+            <div className="step-content">
+              <h4>Friend Joins</h4>
+              <p>
+                You get rewarded, when they signup and buy their first plan.
+              </p>
+            </div>
+          </div>
+
+          <div className="step-item">
+            <div
+              className="step-icon"
+              style={{ background: "#e6f4ea", color: "#1e8e3e" }}>
+              <span className="material-symbols-rounded">account_balance</span>
+            </div>
+            <div className="step-content">
+              <h4>Direct Payout</h4>
+              <p>
+                <strong>₹50 bonus</strong> will be credited to your registered
+                bank account number
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="copy-area" style={{ border: "1px dashed #dadce0" }}>
+          <span
+            style={{
+              flex: 1,
+              fontSize: "0.8rem",
+              fontFamily: "monospace",
+              color: "#202124",
+            }}>
+            carriagepatch.app/?ref={user?._id}
+          </span>
+          <button
+            id="copyBtn"
+            className="icon-btn"
+            onClick={function () {
+              setIsCopied("done");
+              const linkText = "carriagepatch.app/?ref=skylie00";
+              navigator.clipboard.writeText(linkText);
+
+              setTimeout(() => {
+                setIsCopied("content_copy");
+              }, 2000);
+            }}>
+            <span
+              className="material-symbols-rounded"
+              style={{ fontSize: "20px" }}>
+              {isCopied}
+            </span>
+          </button>
+        </div>
+      </div>
+      <button
+        className="connect"
+        id="connectBtn"
+        onClick={() => {
+          if (isConnected) {
+            disconnect(percentage);
+          } else {
+            if (!dailyQuota) {
+              if (user?.plan?.active > 0) {
+                Toast.show("Your daily quota had been ended");
+              } else {
+                Toast.show("Activate any plan to continue");
+              }
+              return;
+            }
+            connect();
+          }
+        }}
+        data-state={isConnected ? "connected" : "disconnected"}>
+        {isConnected ? (
+          <>
+            <span className="material-symbols-rounded">pause_circle</span>
+            <span>Stop Sharing</span>
+          </>
+        ) : (
+          <>
+            <span className="material-symbols-rounded">sensors</span>
+            <span>Connect</span>
+          </>
+        )}
+      </button>
+      <div
+        className={`reward-popup-overlay ${showRewardPopup || user?.earned || earned ? "show" : ""}`}
+        id="rewardPopup">
+        <div className="reward-modal">
+          <div className="reward-content">
+            <div className="reward-icon-container">
+              <span className="material-symbols-rounded">
+                account_balance_wallet
+              </span>
+            </div>
+            <h2 className="reward-title">₹{earned} earned</h2>
+            <p className="reward-subtitle">
+              Your data sharing bonus has been credited to your CarriagePatch
+              wallet.
+            </p>
+          </div>
+
+          <div className="withdrawbtn">
+            <Link href={`/withdraw/${earned}`}>
+              <button className="btn-fill">Withdraw now</button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
