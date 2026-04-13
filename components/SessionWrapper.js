@@ -13,8 +13,6 @@ const SessionWrapper = ({ children }) => {
   useEffect(() => {
     if (user) {
       setMessages(user?.messages);
-    } else {
-      if (!isLoading) setMessages(["Login your account to continue"]);
     }
   }, [user]);
 

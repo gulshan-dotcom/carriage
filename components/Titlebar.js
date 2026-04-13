@@ -12,7 +12,7 @@ export default function Titlebar() {
         <span style={{ fontWeight: 700 }}>
           ₹ {user?.wallet?.toFixed(2) || 0}
         </span>
-        <Link href="/withdraw">
+        <Link href="/actions/withdraw">
           <button className="payout-btn">
             <span
               className="material-symbols-rounded"

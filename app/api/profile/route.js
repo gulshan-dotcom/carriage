@@ -9,6 +9,8 @@ export async function GET(req) {
 
     const user = await User.findOne({ email });
 
+    console.log(user,email, "log server")
+
     return NextResponse.json({ user }, { status: 200 });
   } catch (error) {
     console.log(error.message);

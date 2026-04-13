@@ -13,7 +13,7 @@ const Page = () => {
 
   useEffect(() => {
     if (status === "authenticated" && session) {
-      router.replace(`/home`);
+      router.replace(`/actions/home`);
       return;
     }
   }, [status, referrer, router, session]);
@@ -38,7 +38,7 @@ const Page = () => {
                   <button
                     onClick={() =>
                       signIn("google", {
-                        callbackUrl: `/home?ref=${referrer || ""}` || "/",
+                        callbackUrl: `/actions/home?ref=${referrer || ""}` || "/",
                       })
                     }
                     className="w-full cursor-pointer max-w-xs font-bold shadow-sm rounded-lg py-3 px-1.5 bg-indigo-100 text-gray-800 flex items-center justify-center transition-all duration-300 ease-in-out hover:shadow focus:shadow-sm focus:outline-none">
@@ -69,7 +69,7 @@ const Page = () => {
                     onClick={() =>
                       signIn("github", {
                         callbackUrl:
-                          `/home?ref=${referrer || ""}` || "/user/profile",
+                          `/actions/home?ref=${referrer || ""}` || "/actions/user/profile",
                       })
                     }
                     className="w-full max-w-xs px-1.5 cursor-pointer font-bold shadow-sm rounded-lg py-3 bg-indigo-100 text-gray-800 flex items-center justify-center transition-all duration-300 ease-in-out hover:shadow focus:shadow-sm focus:outline-none mt-5">

@@ -55,7 +55,7 @@ export const authOptions = {
     },
   },
   async redirect({ url, baseUrl }) {
-    return baseUrl + "/home";
+    return baseUrl + "/actions/home";
   },
   session: {
     strategy: "jwt",

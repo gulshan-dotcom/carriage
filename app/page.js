@@ -20,7 +20,7 @@ export default function Home({ searchParams }) {
 
   useEffect(() => {
     if (status === "authenticated" && session) {
-      router.replace(`/home`);
+      router.replace(`/actions/home`);
       return;
     }
   }, [status, router, session]);
@@ -47,7 +47,7 @@ export default function Home({ searchParams }) {
         <div style={{ fontSize: "1.1rem", fontWeight: 700 }}>CarriagePatch</div>
         <div className="wallet-pill">
           <span style={{ fontWeight: 700 }}>₹ 0</span>
-          <Link href={`/login?ref=${ref}`}>
+          <Link href={`/actions/login?ref=${ref}`}>
             <button className="payout-btn">
               <span
                 className="material-symbols-rounded"
@@ -67,25 +67,25 @@ export default function Home({ searchParams }) {
         </header>
         <div className="chips-container">
           <div className="chips-row">
-            <Link href={`/login?ref=${ref}`}>
+            <Link href={`/actions/login?ref=${ref}`}>
               <div className="chip">
                 <span className="material-symbols-rounded">history</span>History
               </div>
             </Link>
 
-            <Link href={`/login?ref=${ref}`}>
+            <Link href={`/actions/login?ref=${ref}`}>
               <div className="chip" id="openRefer">
                 <span className="material-symbols-rounded">group</span>Refer
               </div>
             </Link>
 
-            <Link href={`/login?ref=${ref}`}>
+            <Link href={`/actions/login?ref=${ref}`}>
               <div className="chip">
                 <span className="material-symbols-rounded">layers</span>Plans
               </div>
             </Link>
 
-            <Link href={`/login?ref=${ref}`}>
+            <Link href={`/actions/login?ref=${ref}`}>
               <div className="chip">
                 <span className="material-symbols-rounded">settings</span>
                 Settings
@@ -159,7 +159,7 @@ export default function Home({ searchParams }) {
         </div>
       </main>
 
-      <Link href={`/login?ref=${ref}`}>
+      <Link href={`/actions/login?ref=${ref}`}>
         <button className="connect" id="connectBtn" data-state="disconnected">
           <span className="material-symbols-rounded">sensors</span>{" "}
           <span>Connect</span>
@@ -172,7 +172,7 @@ export default function Home({ searchParams }) {
           return (
             <Link
               key={item.href}
-              href={`/login?ref=${ref}`}
+              href={`/actions/login?ref=${ref}`}
               className={`nav-link ${isActive ? "active" : ""}`}>
               <div className="nav-icon-wrapper">
                 <span className="material-symbols-rounded">{item.icon}</span>

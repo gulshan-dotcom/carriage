@@ -9,7 +9,7 @@ import { useToast } from "@/components/ToastContext";
 export default function Home() {
   const { data, isLoading } = useUser();
   const user = data?.user;
-  const { Toast } = useToast;
+  const { Toast } = useToast();
   const [greeting, setGreeting] = useState("Skylie");
   const [isCopied, setIsCopied] = useState("content_copy");
   const [referPanel, setReferPanel] = useState(false);
@@ -110,23 +110,23 @@ export default function Home() {
       let chunkSize = assumed >= 0 ? assumed : 0;
       try {
         if (chunkSize === 0) return;
-        // let response = await fetch("https://httpbin.org/bytes/" + chunkSize);
-        // let blob = await response.blob();
-        await fetch("/api/tempchunks");
+        let response = await fetch("https://httpbin.org/bytes/" + chunkSize.toFixed(0));
+        let blob = await response.blob();
+        // await fetch("/api/tempchunks");
 
-        // downloaded += blob.size;
-        downloaded += chunkSize;
+        downloaded += blob.size;
+        // downloaded += chunkSize;
 
         let percent = (downloaded / (targetMB * 1024 * 1024)) * 100;
         setPercentage(Math.min(percent, 100));
 
         if (downloaded < targetMB * 1024 * 1024) {
           const interval = 1000 - (Date.now() - startTime);
-          // let currentSpeed = blob.size / ((interval + (Date.now() - startTime)) / 1000) / (1024 * 1024);
-          let currentSpeed =
-            chunkSize /
-            ((interval + (Date.now() - startTime)) / 1000) /
-            (1024 * 1024);
+          let currentSpeed = blob.size / ((interval + (Date.now() - startTime)) / 1000) / (1024 * 1024);
+          // let currentSpeed =
+          //   chunkSize /
+          //   ((interval + (Date.now() - startTime)) / 1000) /
+          //   (1024 * 1024);
           setSpeed(currentSpeed);
           setTimeout(
             () => loadChunk(Math.min(percent, 100)),
@@ -156,7 +156,7 @@ export default function Home() {
         </header>
         <div className="chips-container">
           <div className="chips-row">
-            <Link href={`/history`}>
+            <Link href={`/actions/history`}>
               <div className="chip">
                 <span className="material-symbols-rounded">history</span>History
               </div>
@@ -169,13 +169,13 @@ export default function Home() {
               <span className="material-symbols-rounded">group</span>Refer
             </div>
 
-            <Link href={`/plans`}>
+            <Link href={`/actions/plans`}>
               <div className="chip">
                 <span className="material-symbols-rounded">layers</span>Plans
               </div>
             </Link>
 
-            <Link href={`/profile`}>
+            <Link href={`/actions/profile`}>
               <div className="chip">
                 <span className="material-symbols-rounded">settings</span>
                 Settings
@@ -359,6 +359,7 @@ export default function Home() {
               if (user?.plan?.active > 0) {
                 Toast.show("Your daily quota had been ended");
               } else {
+                console.log(user)
                 Toast.show("Activate any plan to continue");
               }
               return;
@@ -379,6 +380,7 @@ export default function Home() {
           </>
         )}
       </button>
+      {console.log(showRewardPopup || user?.earned || earned, user?.earned, "already dilsh")}
       <div
         className={`reward-popup-overlay ${showRewardPopup || user?.earned || earned ? "show" : ""}`}
         id="rewardPopup">
@@ -397,7 +399,7 @@ export default function Home() {
           </div>
 
           <div className="withdrawbtn">
-            <Link href={`/withdraw/${earned}`}>
+            <Link href={`/actions/withdraw/${earned}`}>
               <button className="btn-fill">Withdraw now</button>
             </Link>
           </div>

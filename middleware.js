@@ -6,8 +6,7 @@ export async function middleware(request) {
   const { pathname } = request.nextUrl;
 
   if (
-    (pathname.startsWith("/") || pathname.startsWith("/api")) &&
-    !pathname.startsWith("/login")
+    !pathname.startsWith("/actions/login")
   ) {
     let userEmail = "";
     if (!userEmail) {
@@ -28,11 +27,11 @@ export async function middleware(request) {
           { success: false, message: "Unauthorized by middleWare" },
           { status: 401 },
         );
-      } else if (pathname !== "/") {
-        return NextResponse.redirect("/login");
+      } else if (pathname.startsWith("/actions")) {
+        return NextResponse.redirect(new URL("/actions/login", request.url));
       }
     }
-
+    
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set("x-user-email", userEmail);
 
@@ -44,5 +43,5 @@ export async function middleware(request) {
 }
 
 export const config = {
-  matcher: ["/:path*", "/api/:path*"],
+  matcher: ["/actions/:path*", "/((?!api/auth|_next|.*\\..*).*)"],
 };

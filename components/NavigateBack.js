@@ -1,13 +1,21 @@
 "use client";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import React from "react";
 
 const NavigateBack = () => {
   const pathname = usePathname();
+  const router = useRouter();
 
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      router.back();
+    } else {
+      router.push("/home");
+    }
+  };
   return (
     <>
-      {pathname != "/login" && (
+      {!pathname.includes("/login") && (
         <nav
           style={{
             display: "flex",
@@ -17,7 +25,7 @@ const NavigateBack = () => {
             padding: "16px 20px",
             background: "var(--surface)",
           }}>
-          <button className="icon-btn">
+          <button className="icon-btn" onClick={handleBack}>
             <span className="material-symbols-rounded">arrow_back</span>
           </button>
           <div

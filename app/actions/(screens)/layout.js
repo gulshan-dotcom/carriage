@@ -1,5 +1,5 @@
 import NavigateBack from "@/components/NavigateBack";
-import "../globals.css";
+import "@/app/globals.css";
 
 export default function ScreensLayout({ children }) {
   return (
