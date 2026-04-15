@@ -125,16 +125,16 @@ export default function Home() {
 
       try {
         if (chunkSize === 0) return;
-        // let response = await fetch("https://speed.cloudflare.com/__down?bytes=" + chunkSize.toFixed(0));
-        let response = await fetch("/api/tempchunks", {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            chunkSize,
-          }),
-        });
+        let response = await fetch("https://speed.cloudflare.com/__down?bytes=" + chunkSize.toFixed(0));
+        // let response = await fetch("/api/tempchunks", {
+        //   method: "PUT",
+        //   headers: {
+        //     "Content-Type": "application/json",
+        //   },
+        //   body: JSON.stringify({
+        //     chunkSize,
+        //   }),
+        // });
         const reader = response.body.getReader();
         console.log("requesting for ", chunkSize / 1024, "MB chunk");
 
