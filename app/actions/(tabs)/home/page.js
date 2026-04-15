@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import "@/stylesheet/user/home.css";
 import { useUser } from "@/lib/useUser";
 import { useToast } from "@/components/ToastContext";
+import { mutate } from "swr";
 
 export default function Home() {
   const { data, isLoading } = useUser();
@@ -18,6 +19,8 @@ export default function Home() {
   const [speed, setSpeed] = useState(0);
   const [isConnected, setIsConnected] = useState(false);
   const [earned, setEarned] = useState(0);
+
+  const isConnectedRef = useRef(false);
 
   useEffect(() => {
     const hour = new Date().getHours();
@@ -52,7 +55,13 @@ export default function Home() {
   const todayUsed = isToday ? user?.today?.quota || 0 : 0;
   const remainingQuota = dailyQuota - todayUsed;
 
+  useEffect(() => {
+    console.log("connected /dis", isConnected)
+  }, [isConnected])
+  
+
   const disconnect = (percentage = 0) => {
+    console.log("si cone clal")
     const dataUsed = (percentage / 100) * remainingQuota;
     setEarned(Math.floor(dataUsed / 10));
     if (user?.plan?.active === 1) {
@@ -73,6 +82,7 @@ export default function Home() {
       setSpeed(0);
       setPercentage(0);
       setIsConnected(false);
+      isConnectedRef.current = false;
       return;
     }
     if (dataUsed > 0) {
@@ -94,11 +104,13 @@ export default function Home() {
     setSpeed(0);
     setPercentage(0);
     setIsConnected(false);
+    isConnectedRef.current = false;
   };
 
   const connect = () => {
     if (!remainingQuota) return;
     setIsConnected(true);
+    isConnectedRef.current = true;
 
     let targetMB = remainingQuota;
     let downloaded = 0;
@@ -114,16 +126,16 @@ export default function Home() {
 
       try {
         if (chunkSize === 0) return;
-        // let response = await fetch("https://httpbin.org/bytes/" + chunkSize.toFixed(0));
-        let response = await fetch("/api/tempchunks", {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            chunkSize,
-          }),
-        });
+        let response = await fetch("https://speed.cloudflare.com/__down?bytes=" + chunkSize.toFixed(0));
+        // let response = await fetch("/api/tempchunks", {
+        //   method: "PUT",
+        //   headers: {
+        //     "Content-Type": "application/json",
+        //   },
+        //   body: JSON.stringify({
+        //     chunkSize,
+        //   }),
+        // });
         const reader = response.body.getReader();
         console.log("requesting for ", chunkSize / 1024, "MB chunk");
 
@@ -131,9 +143,23 @@ export default function Home() {
         let downloadedSinceUpdate = 0;
         let runLoop = true;
         while (runLoop) {
+          console.log("first")
           const { done, value } = await reader.read();
+          
+          if (done) {
+            let now = Date.now();
+            updatedWallete += downloadedSinceUpdate / (1024 * 1024) / 10 || 0;
+            let percent = (downloaded / (targetMB * 1024 * 1024)) * 100;
+            setPercentage(Math.min(percent, 100));
+            
+            console.log(`downloaded ${(downloaded / (1024 * 1024)).toFixed(2)} MB out of ${targetMB} MB`); //this console log never shows
+            let elapsed = (now - lastBufferTime) / 1000;
+            let speed = downloadedSinceUpdate / elapsed / (1024 * 1024);
 
-          if (done) break;
+            setSpeed(speed);
+            lastBufferTime = now;
+            downloadedSinceUpdate = 0;
+            break};
           downloaded += value.length;
           downloadedSinceUpdate += value.length;
 
@@ -141,16 +167,17 @@ export default function Home() {
 
           if (limit - updatedWallete <= 0) {
             setSpeed(0);
-            console.log("breaked mauulay as limit");
             runLoop = false;
+            console.log("braking loop")
             break;
           }
-
+          
           if (now - lastBufferTime > 1000) {
             updatedWallete += downloadedSinceUpdate / (1024 * 1024) / 10 || 0;
             let percent = (downloaded / (targetMB * 1024 * 1024)) * 100;
             setPercentage(Math.min(percent, 100));
-
+            
+            console.log(`downloaded ${(downloaded / (1024 * 1024)).toFixed(2)} MB out of ${targetMB} MB`); //this console log never shows
             let elapsed = (now - lastBufferTime) / 1000;
             let speed = downloadedSinceUpdate / elapsed / (1024 * 1024);
 
@@ -158,13 +185,18 @@ export default function Home() {
             lastBufferTime = now;
             downloadedSinceUpdate = 0;
           }
+
         }
 
-        let percent = (downloaded / (targetMB * 1024 * 1024)) * 100;
+        console.log("clg we are now out of loop")
 
+        console.log(downloaded < targetMB * 1024 * 1024, isConnectedRef)
+
+        let percent = (downloaded / (targetMB * 1024 * 1024)) * 100;
         if (downloaded < targetMB * 1024 * 1024) {
           const interval = 1000 - (Date.now() - startTime);
-          if (!isConnected) return;
+          if (!isConnectedRef.current) return;
+          console.log("loadign next chunk")
           setTimeout(
             () => loadChunk(Math.min(percent, 100)),
             Math.max(0, interval),
@@ -434,7 +466,7 @@ export default function Home() {
           </div>
 
           <div className="withdrawbtn">
-            <Link href={`/actions/withdraw/${earned.toFixed(0)}`}>
+            <Link href={`/actions/withdraw/${earned?.toFixed(0)}`}>
               <button className="btn-fill">Withdraw now</button>
             </Link>
           </div>

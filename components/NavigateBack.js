@@ -16,17 +16,18 @@ const NavigateBack = () => {
   };
   return (
     <>
-      {!pathname.includes("/login") && (
+      {!pathname.includes("login") && (
         <nav
-          style={{
-            display: "flex",
-            alignItems: "center",
-            position: "fixed",
-            width: "100%",
-            padding: "16px 20px",
-            background: "var(--surface)",
-            zIndex: "1000",
-          }}>
+        style={{
+          display: "flex",
+          alignItems: "center",
+          position: "fixed",
+          width: "100%",
+          padding: "16px 20px",
+          background: "var(--surface)",
+          zIndex: "1000",
+        }}>
+            {console.log(pathname)}
           <button className="icon-btn" onClick={handleBack}>
             <span className="material-symbols-rounded">arrow_back</span>
           </button>

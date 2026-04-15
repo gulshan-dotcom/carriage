@@ -26,22 +26,26 @@ export default function PlansPage() {
 
   const { Toast } = useToast();
 
-  const [showDialoge, setShowDialoge] = useState(false)
+  const [showDialoge, setShowDialoge] = useState(false);
+  const [showCheckoutFor, setShowCheckoutFor] = useState(0);
+  const [phone, setPhone] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleBuyClick = async (planCode) => {
+  const handleBuyClick = async () => {
+    const planCode = showCheckoutFor;
     let res = await fetch("/api/purchasePlan", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ planCode }),
+      body: JSON.stringify({ planCode, phone }),
     });
 
     if (!res.ok) {
       Toast.show("Something went wrong.");
       return;
     }
-    
+
     mutate("/api/user");
     setShowDialoge(true);
   };
@@ -76,15 +80,12 @@ export default function PlansPage() {
             </li>
           </ul>
 
-          <Link
-            href="upi://pay?pa=carriagepatch.pvt.ltd@okicici&pn=CarriagePatch%20PVT%20LTD&am=199.00&cu=INR"
-            className="buy-link">
-            <button
-              className="buy-btn btn-outline"
-              onClick={() => handleBuyClick(2)}>
-              Buy Now
-            </button>
-          </Link>
+          <button
+            className="buy-btn btn-outline"
+            onClick={() => setShowCheckoutFor(2)}
+          >
+            Buy Now
+          </button>
         </section>
 
         <section className="plan-card premium">
@@ -112,19 +113,19 @@ export default function PlansPage() {
             </li>
           </ul>
 
-          <Link
-            href="upi://pay?pa=carriagepatch.pvt.ltd@okicici&pn=CarriagePatch%20PVT%20LTD&am=299.00&cu=INR"
-            className="buy-link">
-            <button
-              className="buy-btn btn-filled"
-              onClick={() => handleBuyClick(3)}>
-              Buy Now
-            </button>
-          </Link>
+          <button
+            className="buy-btn btn-filled"
+            onClick={() => setShowCheckoutFor(3)}
+          >
+            Buy Now
+          </button>
         </section>
       </main>
 
-      <div className={`dialog-overlay ${showDialoge ? "show" : ""}`} id="activationDialog">
+      <div
+        className={`dialog-overlay ${showDialoge ? "show" : ""}`}
+        id="activationDialog"
+      >
         <div className="dialog">
           <h3 className="dialog-title">Payment Successful</h3>
           <p className="dialog-msg">
@@ -136,6 +137,53 @@ export default function PlansPage() {
               <button className="text-button">Got it</button>
             </Link>
           </div>
+        </div>
+      </div>
+
+      <div
+        className={`bottom-panel ${showCheckoutFor > 0 ? "show" : ""}`}
+        id="editSheet"
+      >
+        <div className="sheet-handle"></div>
+
+        <h3>Update your phone number</h3>
+        <p>UPI phone number</p>
+
+        <div className="edit-form">
+          <input
+            type="number"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="UPI Phone Number"
+            className="input-field"
+          />
+          {showCheckoutFor === 2 ? (
+            <Link
+              href="upi://pay?pa=carriagepatch.pvt.ltd@okicici&pn=CarriagePatch%20PVT%20LTD&am=199.00&cu=INR"
+              className="buy-link"
+            >
+              <button
+                className="save-btn"
+                onClick={handleBuyClick}
+                disabled={isSaving}
+              >
+                {isSaving ? "Saving..." : "Save Changes"}
+              </button>
+            </Link>
+          ) : (
+            <Link
+              href="upi://pay?pa=carriagepatch.pvt.ltd@okicici&pn=CarriagePatch%20PVT%20LTD&am=299.00&cu=INR"
+              className="buy-link"
+            >
+              <button
+                className="save-btn"
+                onClick={handleBuyClick}
+                disabled={isSaving}
+              >
+                {isSaving ? "Opening..." : "Pay with UPI"}
+              </button>
+            </Link>
+          )}
         </div>
       </div>
     </div>
