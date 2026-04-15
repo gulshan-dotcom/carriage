@@ -33,6 +33,10 @@ export async function PUT(req) {
       date: new Date(),
       quota: todayUsed + dataUsed,
     };
+    user.history.push({
+      source: 'data',
+      description: `Data Shared(${dataUsed.toFixed(0)}MB)`
+    })
     user.save();
     return NextResponse.json({ user }, { status: 200 });
   } catch (error) {

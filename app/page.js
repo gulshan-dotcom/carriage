@@ -46,7 +46,7 @@ export default function Home({ searchParams }) {
       <nav className="top-nav">
         <div style={{ fontSize: "1.1rem", fontWeight: 700 }}>CarriagePatch</div>
         <div className="wallet-pill">
-          <span style={{ fontWeight: 700 }}>₹ 0</span>
+          <span style={{ fontWeight: 700 }}>&#8377; 0</span>
           <Link href={`/actions/login?ref=${ref}`}>
             <button className="payout-btn">
               <span
@@ -105,7 +105,7 @@ export default function Home({ searchParams }) {
             Current Earnings
           </p>
           <h2 style={{ fontSize: "2.5rem", fontWeight: 500, margin: "8px 0" }}>
-            ₹ 0.00
+            &#8377; 0.00
           </h2>
 
           <div className="progress-wrapper">

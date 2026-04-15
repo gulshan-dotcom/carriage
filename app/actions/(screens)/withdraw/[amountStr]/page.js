@@ -49,7 +49,7 @@ const Page = () => {
       setPopupMessage({
         title: "Insufficient Balance",
         message:
-          "You don't have enough funds to withdraw ₹ " + formData.amount + ".",
+          "You don't have enough funds to withdraw &#8377; " + formData.amount + ".",
       });
       return;
     }
@@ -67,7 +67,7 @@ const Page = () => {
         if (formData.amount < 500) {
           setPopupMessage({
             title: "Amount too low",
-            message: "The minimum withdrawal limit is ₹ 500.",
+            message: "The minimum withdrawal limit is &#8377; 500.",
           });
           return;
         }
@@ -76,7 +76,7 @@ const Page = () => {
           setPopupMessage({
             title: "Insufficient Balance",
             message:
-              "You don't have enough funds to withdraw ₹ " +
+              "You don't have enough funds to withdraw &#8377; " +
               formData.amount +
               ".",
           });
@@ -122,9 +122,10 @@ const Page = () => {
           (item) => item.source === "refer" && item.isPending,
         );
         if (user?.earned < amount - 1 && !foundOnHistory) {
+          alert(user?.earned, amount);
           setPopupMessage({
             title: "Insufficient Balance",
-            message: "You can't withdraw ₹ " + user?.earned + ".",
+            message: "You can't withdraw &#8377; " + user?.earned + ".",
           });
           return;
         }
@@ -195,7 +196,7 @@ const Page = () => {
                   fontWeight: 500,
                   marginTop: "4px",
                 }}>
-                ₹ {amount ? amount : user?.wallet?.toFixed(2)}
+                &#8377; {amount ? amount : user?.wallet?.toFixed(2)}
               </h2>
             </div>
             <span
@@ -242,7 +243,7 @@ const Page = () => {
               value={!amount ? formData.amount : amount}
               onChange={handleFormChange}
               disabled={amount}
-              placeholder="Min. ₹ 500"
+              placeholder="Min. &#8377; 500"
             />
           </div>
 

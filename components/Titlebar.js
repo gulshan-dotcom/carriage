@@ -10,7 +10,7 @@ export default function Titlebar() {
       <div style={{ fontSize: "1.1rem", fontWeight: 700 }}>CarriagePatch</div>
       <div className="wallet-pill">
         <span style={{ fontWeight: 700 }}>
-          ₹ {user?.wallet?.toFixed(2) || 0}
+          &#8377; {user?.wallet?.toFixed(2) || 0}
         </span>
         <Link href="/actions/withdraw">
           <button className="payout-btn">

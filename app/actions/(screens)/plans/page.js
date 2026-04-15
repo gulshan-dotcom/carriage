@@ -61,7 +61,7 @@ export default function PlansPage() {
           <h3 className="plan-name">Basic</h3>
 
           <div className="plan-price">
-            <h2>₹199</h2>
+            <h2>&#8377;199</h2>
             <span>/ 7 days</span>
           </div>
 
@@ -94,7 +94,7 @@ export default function PlansPage() {
           <h3 className="plan-name pro">Pro</h3>
 
           <div className="plan-price">
-            <h2>₹299</h2>
+            <h2>&#8377;299</h2>
             <span>/ 7 days</span>
           </div>
 
