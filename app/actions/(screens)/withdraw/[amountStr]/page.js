@@ -1,10 +1,11 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import "@/stylesheet/user/withdraw.css";
 import { useUser } from "@/lib/useUser";
 import Link from "next/link";
 import { useToast } from "@/components/ToastContext";
 import { useParams } from "next/navigation";
+import { mutate } from "swr";
 
 const Page = () => {
   const { amountStr } = useParams();
@@ -24,7 +25,13 @@ const Page = () => {
     amount: 0,
   });
 
-  const sendRequest = () => {
+  useEffect(() => {
+    if (user?.receivingPhone && user?.name) {
+      setFormData({ ...formData, name: user.name, phone: user.receivingPhone });
+    }
+  }, [user]);
+
+  const sendRequest = async () => {
     if (!formData.name) {
       Toast.show("Please enter your full name.");
       return;
@@ -52,7 +59,7 @@ const Page = () => {
         if (user?.pendingWithdraw > 0) {
           setPopupMessage({
             title: "Already payment requested",
-            message: `Payment is already requested. Please wait!`,
+            message: `An Payment is still at request. Please wait!`,
           });
           return;
         }
@@ -99,13 +106,14 @@ const Page = () => {
               "Please check your internet connection, or try again later.",
           });
         }
+        mutate("/api/user");
 
         return;
       } else {
         if (user?.withdraw?.amount > 0) {
           setPopupMessage({
             title: "Already payment requested",
-            message: `Payment is already requested. Please wait!`,
+            message: `An Payment is still at request. Please wait!`,
           });
           return;
         }
@@ -113,7 +121,7 @@ const Page = () => {
         const foundOnHistory = user?.history.find(
           (item) => item.source === "refer" && item.isPending,
         );
-        if (user?.earned <= 0 && !foundOnHistory) {
+        if (user?.earned < amount - 1 && !foundOnHistory) {
           setPopupMessage({
             title: "Insufficient Balance",
             message: "You can't withdraw ₹ " + user?.earned + ".",
@@ -123,8 +131,6 @@ const Page = () => {
         const isReferAmount = !user?.earned <= 0 && foundOnHistory;
 
         const fetchreq = async () => {
-          alert(amount);
-          alert(typeof Number(amount));
           const res = await fetch("/api/reqPayment", {
             method: "PUT",
             headers: {
@@ -136,19 +142,21 @@ const Page = () => {
               formData,
             }),
           });
-          return res;
+          let status = res.status;
+          return status;
         };
 
-        const res = fetchreq();
+        const status = await fetchreq();
 
-        // if (!res.ok) {
-        //   setPopupMessage({
-        //     title: "Something went wrong!",
-        //     message:
-        //       "Please check your internet connection, or try again later.",
-        //   });
-        //   return;
-        // }
+        if (status != 200) {
+          setPopupMessage({
+            title: "Something went wrong!",
+            message:
+              "Please check your internet connection, or try again later.",
+          });
+          return;
+        }
+        mutate("/api/user");
 
         setReqSent(true);
 
@@ -269,7 +277,7 @@ const Page = () => {
             Your request is being processed. Payment will reflect in your
             account within <b>7 business days</b>.
           </p>
-          <Link href="/home">
+          <Link href="/actions/home">
             <button className="submit-btn" style={{ maxWidth: "240px" }}>
               Done
             </button>
@@ -299,7 +307,7 @@ const Page = () => {
             {popupMessage.message}
           </p>
           <div className="popup-actions">
-            <Link href="/home">
+            <Link href="/actions/home">
               <button className="text-button" id="closepopup">
                 Got it
               </button>

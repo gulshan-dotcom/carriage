@@ -6,7 +6,6 @@ export async function PUT(req) {
   try {
     const email = req.headers.get("x-user-email");
     const { source, amount, formData } = await req.json();
-    console.log(typeof Number(amount), "amount type");
     await connectMongo();
 
     const user = await User.findOne({ email });

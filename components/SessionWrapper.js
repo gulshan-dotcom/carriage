@@ -9,6 +9,7 @@ const SessionWrapper = ({ children }) => {
   const [messages, setMessages] = useState([]);
   const { data, isLoading } = useUser();
   const user = data?.user;
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -16,9 +17,30 @@ const SessionWrapper = ({ children }) => {
     }
   }, [user]);
 
+  const onClose = async (id, local) => {
+    if (loading) return;
+    setLoading(true);
+
+    try {
+      if (!local) {
+        await fetch("/api/deleteMessage", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ messageId: id }),
+        });
+      }
+
+      setMessages((prev) => prev.filter((msg) => msg._id !== id));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const Toast = {
     show: (message) => {
-      setMessages((prev) => [...prev, message]);
+      setMessages((prev) => [...prev, { text: message, local: false }]);
     },
   };
   return (
@@ -27,7 +49,12 @@ const SessionWrapper = ({ children }) => {
         value={{
           Toast,
         }}>
-        <ToastComponent setMessages={setMessages} messages={messages} />
+        <ToastComponent
+          setMessages={setMessages}
+          messages={messages}
+          onClose={onClose}
+          enabled={!loading}
+        />
         {children}
       </DataContext.Provider>
     </SessionProvider>

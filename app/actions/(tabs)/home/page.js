@@ -63,12 +63,13 @@ export default function Home() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            dataUsed,
+            dataUsed: Number(dataUsed.toFixed(0)),
           }),
         });
       }
       setShowRewardPopup(true);
       expirePlan();
+      mutate("/api/user");
       setSpeed(0);
       setPercentage(0);
       setIsConnected(false);
@@ -87,6 +88,7 @@ export default function Home() {
         });
       }
       updateWallet();
+      mutate("/api/user");
     }
 
     setSpeed(0);
@@ -106,28 +108,63 @@ export default function Home() {
       const startTime = Date.now();
       let updatedWallete =
         user?.wallet + (remainingQuota / 1000) * percentage || 0;
-      let assumed = (1 - Math.pow(updatedWallete / limit, 2)) * (1024 * 1024);
+      let assumed =
+        (1 - Math.pow(updatedWallete / limit, 2)) * (2 * 1024 * 1024);
       let chunkSize = assumed >= 0 ? assumed : 0;
+
       try {
         if (chunkSize === 0) return;
-        let response = await fetch("https://httpbin.org/bytes/" + chunkSize.toFixed(0));
-        let blob = await response.blob();
-        // await fetch("/api/tempchunks");
+        // let response = await fetch("https://httpbin.org/bytes/" + chunkSize.toFixed(0));
+        let response = await fetch("/api/tempchunks", {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            chunkSize,
+          }),
+        });
+        const reader = response.body.getReader();
+        console.log("requesting for ", chunkSize / 1024, "MB chunk");
 
-        downloaded += blob.size;
-        // downloaded += chunkSize;
+        let lastBufferTime = Date.now();
+        let downloadedSinceUpdate = 0;
+        let runLoop = true;
+        while (runLoop) {
+          const { done, value } = await reader.read();
+
+          if (done) break;
+          downloaded += value.length;
+          downloadedSinceUpdate += value.length;
+
+          let now = Date.now();
+
+          if (limit - updatedWallete <= 0) {
+            setSpeed(0);
+            console.log("breaked mauulay as limit");
+            runLoop = false;
+            break;
+          }
+
+          if (now - lastBufferTime > 1000) {
+            updatedWallete += downloadedSinceUpdate / (1024 * 1024) / 10 || 0;
+            let percent = (downloaded / (targetMB * 1024 * 1024)) * 100;
+            setPercentage(Math.min(percent, 100));
+
+            let elapsed = (now - lastBufferTime) / 1000;
+            let speed = downloadedSinceUpdate / elapsed / (1024 * 1024);
+
+            setSpeed(speed);
+            lastBufferTime = now;
+            downloadedSinceUpdate = 0;
+          }
+        }
 
         let percent = (downloaded / (targetMB * 1024 * 1024)) * 100;
-        setPercentage(Math.min(percent, 100));
 
         if (downloaded < targetMB * 1024 * 1024) {
           const interval = 1000 - (Date.now() - startTime);
-          let currentSpeed = blob.size / ((interval + (Date.now() - startTime)) / 1000) / (1024 * 1024);
-          // let currentSpeed =
-          //   chunkSize /
-          //   ((interval + (Date.now() - startTime)) / 1000) /
-          //   (1024 * 1024);
-          setSpeed(currentSpeed);
+          if (!isConnected) return;
           setTimeout(
             () => loadChunk(Math.min(percent, 100)),
             Math.max(0, interval),
@@ -245,7 +282,7 @@ export default function Home() {
           <h3 style={{ fontSize: "1.05rem", fontWeight: 500 }}>
             Recent Activity
           </h3>
-          <Link href="/history">
+          <Link href="/actions/history">
             <button
               style={{
                 background: "none",
@@ -359,7 +396,6 @@ export default function Home() {
               if (user?.plan?.active > 0) {
                 Toast.show("Your daily quota had been ended");
               } else {
-                console.log(user)
                 Toast.show("Activate any plan to continue");
               }
               return;
@@ -380,7 +416,6 @@ export default function Home() {
           </>
         )}
       </button>
-      {console.log(showRewardPopup || user?.earned || earned, user?.earned, "already dilsh")}
       <div
         className={`reward-popup-overlay ${showRewardPopup || user?.earned || earned ? "show" : ""}`}
         id="rewardPopup">
@@ -399,7 +434,7 @@ export default function Home() {
           </div>
 
           <div className="withdrawbtn">
-            <Link href={`/actions/withdraw/${earned}`}>
+            <Link href={`/actions/withdraw/${earned.toFixed(0)}`}>
               <button className="btn-fill">Withdraw now</button>
             </Link>
           </div>

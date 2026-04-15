@@ -3,7 +3,8 @@ import { usePathname, useRouter } from "next/navigation";
 import React from "react";
 
 const NavigateBack = () => {
-  const pathname = usePathname();
+  let pathname = usePathname();
+  pathname = pathname.split("/")[2];
   const router = useRouter();
 
   const handleBack = () => {
@@ -24,6 +25,7 @@ const NavigateBack = () => {
             width: "100%",
             padding: "16px 20px",
             background: "var(--surface)",
+            zIndex: "1000",
           }}>
           <button className="icon-btn" onClick={handleBack}>
             <span className="material-symbols-rounded">arrow_back</span>
@@ -36,7 +38,7 @@ const NavigateBack = () => {
               marginLeft: "16px",
               color: "var(--text-main)",
             }}>
-            {pathname[1].toUpperCase() + pathname.slice(2).split("/")[0]}
+            {pathname[0].toUpperCase() + pathname.slice(1).split("/")[0]}
           </div>
         </nav>
       )}

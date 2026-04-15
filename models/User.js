@@ -5,10 +5,11 @@ const UserSchema = new mongoose.Schema({
   email: { type: String, required: true },
   receivingPhone: String,
   payingPhone: String,
-  referrer: { type: String, default: null },
+  referrer: { type: mongoose.Schema.ObjectId, ref: "User" },
   wallet: { type: Number, default: 0 },
   plan: {
     active: { type: Number, default: 1 },
+    since: Date,
     pending: { type: Number, default: 0 },
   },
   today: {
@@ -30,7 +31,12 @@ const UserSchema = new mongoose.Schema({
       },
     },
   ],
-  messages: [String],
+  messages: [
+    {
+      _id: { type: mongoose.Schema.Types.ObjectId, auto: true },
+      text: String,
+    },
+  ],
   createdAt: {
     type: Date,
     default: Date.now,
